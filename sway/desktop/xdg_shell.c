@@ -12,6 +12,7 @@
 #include "sway/input/input-manager.h"
 #include "sway/input/seat.h"
 #include "sway/output.h"
+#include "sway/server.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/container.h"
 #include "sway/tree/view.h"
@@ -291,6 +292,11 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 		wlr_xdg_surface_schedule_configure(xdg_surface);
 		wlr_xdg_toplevel_set_wm_capabilities(view->wlr_xdg_toplevel,
 			XDG_TOPLEVEL_WM_CAPABILITIES_FULLSCREEN);
+		/*if (view->container) {*/
+		/*	struct sway_container_state * state = &view->container->current;*/
+		/*	wlr_xdg_toplevel_set_size(view->wlr_xdg_toplevel, state->width, state->height);*/
+		/*	sway_log(SWAY_DEBUG, "initial commit. Setting top level to %f, %f", state->width, state->height);*/
+		/*}*/
 		// TODO: wlr_xdg_toplevel_set_bounds()
 		return;
 	}
@@ -305,7 +311,9 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 			new_geo->x != view->geometry.x ||
 			new_geo->y != view->geometry.y;
 
-	if (new_size) {
+	if (new_size  
+			/*&& view->container->node.dirty */
+			) {
 		// The client changed its surface size in this commit. For floating
 		// containers, we resize the container to match. For tiling containers,
 		// we only recenter the surface.

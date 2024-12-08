@@ -283,8 +283,13 @@ void view_autoconfigure(struct sway_view *view) {
 	struct sway_container *con = view->container;
 	struct sway_workspace *ws = con->pending.workspace;
 
+
+	struct sway_node n = view->container->node;
+	sway_log(SWAY_DEBUG, "view_autoconfigure() on '%s' '%s' '%s'"
+			,n.sway_output->wlr_output->name, n.sway_workspace->name, view->container->title);
 	if (container_is_scratchpad_hidden(con) &&
 			con->pending.fullscreen_mode != FULLSCREEN_GLOBAL) {
+		sway_log(SWAY_DEBUG,"Container is scratchpad, returning");
 		return;
 	}
 	struct sway_output *output = ws ? ws->output : NULL;
@@ -294,12 +299,14 @@ void view_autoconfigure(struct sway_view *view) {
 		con->pending.content_y = output->ly;
 		con->pending.content_width = output->width;
 		con->pending.content_height = output->height;
+		sway_log(SWAY_DEBUG,"Container is pending fullscreen workspace. returning");
 		return;
 	} else if (con->pending.fullscreen_mode == FULLSCREEN_GLOBAL) {
 		con->pending.content_x = root->x;
 		con->pending.content_y = root->y;
 		con->pending.content_width = root->width;
 		con->pending.content_height = root->height;
+		sway_log(SWAY_DEBUG,"Container is pending fullscreen global. returning");
 		return;
 	}
 
@@ -308,6 +315,7 @@ void view_autoconfigure(struct sway_view *view) {
 	double y_offset = 0;
 
 	if (!container_is_floating_or_child(con) && ws) {
+		sway_log(SWAY_DEBUG, "view_autoconfigure() '%s' is not floating or child" ,view->container->title);
 		if (config->hide_edge_borders == E_BOTH
 				|| config->hide_edge_borders == E_VERTICAL) {
 			con->pending.border_left = con->pending.x != ws->x;
@@ -338,6 +346,7 @@ void view_autoconfigure(struct sway_view *view) {
 		// In a tabbed or stacked container, the container's y is the top of the
 		// title area. We have to offset the surface y by the height of the title,
 		// bar, and disable any top border because we'll always have the title bar.
+		sway_log(SWAY_DEBUG, "view_autoconfigure() '%s' is not floating" ,view->container->title);
 		list_t *siblings = container_get_siblings(con);
 		bool show_titlebar = (siblings && siblings->length > 1)
 			|| !config->hide_lone_tab;
@@ -395,6 +404,8 @@ void view_autoconfigure(struct sway_view *view) {
 	con->pending.content_y = y;
 	con->pending.content_width = fmax(width, 1);
 	con->pending.content_height = fmax(height, 1);
+	sway_log(SWAY_DEBUG,"Container successfully reached end of view_autoconfigure()");
+	sway_log(SWAY_DEBUG,"x=[%f], y=[%f], width=[%f], height=[%f]", x, y, con->pending.content_width, con->pending.content_height);
 }
 
 void view_set_activated(struct sway_view *view, bool activated) {

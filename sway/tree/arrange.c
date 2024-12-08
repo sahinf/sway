@@ -73,10 +73,12 @@ static void apply_horiz_layout(list_t *children, struct wlr_box *parent) {
 	inner_gap = floor(total_gap / (children->length - 1));
 
 	// Resize windows
-	sway_log(SWAY_DEBUG, "Arranging %p horizontally", parent);
+	sway_log(SWAY_DEBUG, "apply_horiz_layout(): Arranging %p horizontally", parent);
 	double child_x = parent->x;
 	for (int i = 0; i < children->length; ++i) {
 		struct sway_container *child = children->items[i];
+		struct wlr_output *op = child->node.sway_output->wlr_output;
+		sway_log(SWAY_DEBUG, "apply_horiz_layout(): on child '%s' '%s'", child->formatted_title ,op ? op->name : "NULL");
 		child->child_total_width = child_total_width;
 		child->pending.x = child_x;
 		child->pending.y = parent->y;
@@ -211,18 +213,23 @@ static void arrange_children(list_t *children,
 	// Calculate x, y, width and height of children
 	switch (layout) {
 	case L_HORIZ:
+		sway_log(SWAY_DEBUG, "arrange_children() on layout L_HORIZ");
 		apply_horiz_layout(children, parent);
 		break;
 	case L_VERT:
+		sway_log(SWAY_DEBUG, "arrange_children() on layout L_VERT");
 		apply_vert_layout(children, parent);
 		break;
 	case L_TABBED:
+		sway_log(SWAY_DEBUG, "arrange_children() on layout L_TABBED");
 		apply_tabbed_layout(children, parent);
 		break;
 	case L_STACKED:
+		sway_log(SWAY_DEBUG, "arrange_children() on layout L_STACKED");
 		apply_stacked_layout(children, parent);
 		break;
 	case L_NONE:
+		sway_log(SWAY_DEBUG, "arrange_children() on layout L_NONE");
 		apply_horiz_layout(children, parent);
 		break;
 	}
@@ -239,10 +246,14 @@ void arrange_container(struct sway_container *container) {
 		return;
 	}
 	if (container->view) {
+		sway_log(SWAY_DEBUG, "arrange_container() '%s' YES view (%u) calling view_autoconfigure()",
+			container->title,container->view->pid);
 		view_autoconfigure(container->view);
 		node_set_dirty(&container->node);
 		return;
 	}
+	sway_log(SWAY_DEBUG, "arrange_container() '%s' NO view calling arrange_children(...)",
+		container->title);
 	struct wlr_box box;
 	container_get_box(container, &box);
 	arrange_children(container->pending.children, container->pending.layout, &box);
@@ -259,8 +270,8 @@ void arrange_workspace(struct sway_workspace *workspace) {
 	}
 	struct sway_output *output = workspace->output;
 	struct wlr_box *area = &output->usable_area;
-	sway_log(SWAY_DEBUG, "Usable area for ws: %dx%d@%d,%d",
-			area->width, area->height, area->x, area->y);
+	sway_log(SWAY_DEBUG, "arrange_workspace() '%s' at %f, %f", workspace->name,
+			workspace->x, workspace->y);
 
 	bool first_arrange = workspace->width == 0 && workspace->height == 0;
 	struct wlr_box prev_box;
@@ -293,10 +304,12 @@ void arrange_workspace(struct sway_workspace *workspace) {
 
 	workspace_add_gaps(workspace);
 	node_set_dirty(&workspace->node);
-	sway_log(SWAY_DEBUG, "Arranging workspace '%s' at %f, %f", workspace->name,
-			workspace->x, workspace->y);
 	if (workspace->fullscreen) {
 		struct sway_container *fs = workspace->fullscreen;
+		sway_log(SWAY_DEBUG, "arrange_workspace() '%s' '%s' IS fullscreen. calling arrange_container(fs)\n\
+				\t\t\t\t\t\t\t\tfs->title = %s\n\
+				\t\t\t\t\t\t\t\tfs->formatted_title = %s",
+				workspace->name,workspace->output->wlr_output->name, fs->title, fs->formatted_title);
 		fs->pending.x = output->lx;
 		fs->pending.y = output->ly;
 		fs->pending.width = output->width;
@@ -305,6 +318,10 @@ void arrange_workspace(struct sway_workspace *workspace) {
 	} else {
 		struct wlr_box box;
 		workspace_get_box(workspace, &box);
+		sway_log(SWAY_DEBUG, "arrange_workspace() '%s' '%s' NOT fullscreen. calling arrange_children(...)\n\
+				\t\t\t\t\t\t\t\tworkspace->tiling->length = %i\n\
+				\t\t\t\t\t\t\t\tworkspace->layout = %u",
+				workspace->name,workspace->output->wlr_output->name, workspace->tiling->length, workspace->layout);
 		arrange_children(workspace->tiling, workspace->layout, &box);
 		arrange_floating(workspace->floating);
 	}

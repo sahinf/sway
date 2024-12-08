@@ -190,7 +190,8 @@ static void transaction_add_node(struct sway_transaction *transaction,
 		instruction->transaction = transaction;
 		instruction->node = node;
 		instruction->server_request = server_request;
-
+		struct sway_container_state * state = &instruction->container_state;
+		if (state) sway_log(SWAY_DEBUG, "Adding transaction width=%f, height=%f", state->width, state->height);
 		list_add(transaction->instructions, instruction);
 		node->ntxnrefs++;
 	} else if (server_request) {
@@ -290,7 +291,7 @@ static void arrange_children(enum sway_container_layout layout, list_t *children
 		struct sway_container *active, struct wlr_scene_tree *content,
 		int width, int height, int gaps) {
 	int title_bar_height = container_titlebar_height();
-
+	sway_log(SWAY_DEBUG, "arrange_children() of cont '%s'", active ? active->title : "NULL");
 	if (layout == L_TABBED) {
 		struct sway_container *first = children->length == 1 ?
 			((struct sway_container *)children->items[0]) : NULL;
@@ -389,16 +390,20 @@ static void arrange_container(struct sway_container *con,
 		wlr_scene_buffer_set_dest_size(con->output_handler, width, height);
 	}
 
+	/*char * output = con->node.sway_workspace->node.sway_output->wlr_output->name;*/
+	struct wlr_output *op = con->node.sway_workspace->node.sway_output->wlr_output;
 	if (con->view) {
-		int border_top = container_titlebar_height();
-		int border_width = con->current.border_thickness;
+		  sway_log(SWAY_DEBUG, "arrange_container VIEW [%u] '%s' '%s'",
+                   con->view->pid, op ? op->name : "NULL wlr_ouptut", con->title);
+		  int border_top = container_titlebar_height();
+		  int border_width = con->current.border_thickness;
 
-		if (title_bar && con->current.border != B_NORMAL) {
-			wlr_scene_node_set_enabled(&con->title_bar.tree->node, false);
-			wlr_scene_node_set_enabled(&con->border.top->node, true);
-		} else {
-			wlr_scene_node_set_enabled(&con->border.top->node, false);
-		}
+		  if (title_bar && con->current.border != B_NORMAL) {
+			  wlr_scene_node_set_enabled(&con->title_bar.tree->node, false);
+			  wlr_scene_node_set_enabled(&con->border.top->node, true);
+		  } else {
+			  wlr_scene_node_set_enabled(&con->border.top->node, false);
+		  }
 
 		if (con->current.border == B_NORMAL) {
 			if (title_bar) {
@@ -448,10 +453,15 @@ static void arrange_container(struct sway_container *con,
 			border_left, border_top);
 	} else {
 		// make sure to disable the title bar if the parent is not managing it
+		sway_log(SWAY_DEBUG, "arrange_container NOVIEW '%s' '%s'", op ? op->name : "NULL wlr_output", con->title);
 		if (title_bar) {
 			wlr_scene_node_set_enabled(&con->title_bar.tree->node, false);
 		}
 
+		// FURKAN
+		/*wlr_scene_node_reparent(&con->view->scene_tree->node, con->content_tree);*/
+		/*wlr_scene_node_set_position(&con->view->scene_tree->node,*/
+		/*	border_left, border_top);*/
 		arrange_children(con->current.layout, con->current.children,
 			con->current.focused_inactive_child, con->content_tree,
 			width, height, gaps);
@@ -480,6 +490,7 @@ static void arrange_fullscreen(struct wlr_scene_tree *tree,
 		struct sway_container *fs, struct sway_workspace *ws,
 		int width, int height) {
 	struct wlr_scene_node *fs_node;
+	sway_log(SWAY_DEBUG, "arrange_fullscreen() '%s'", fs->title);
 	if (fs->view) {
 		fs_node = &fs->view->scene_tree->node;
 
@@ -865,7 +876,7 @@ static void transaction_commit_pending(void) {
 static void set_instruction_ready(
 		struct sway_transaction_instruction *instruction) {
 	struct sway_transaction *transaction = instruction->transaction;
-
+	sway_log(SWAY_DEBUG, "set_instruction_ready workspace [%s]", instruction->container_state.workspace->name);
 	if (debug.txn_timings) {
 		struct timespec now;
 		clock_gettime(CLOCK_MONOTONIC, &now);
@@ -894,6 +905,7 @@ bool transaction_notify_view_ready_by_serial(struct sway_view *view,
 		uint32_t serial) {
 	struct sway_transaction_instruction *instruction =
 		view->container->node.instruction;
+	sway_log(SWAY_DEBUG, "transaction_notify_view_ready_by_serial: serial [%u]", serial);
 	if (instruction != NULL && instruction->serial == serial) {
 		set_instruction_ready(instruction);
 		return true;
@@ -905,6 +917,8 @@ bool transaction_notify_view_ready_by_geometry(struct sway_view *view,
 		double x, double y, int width, int height) {
 	struct sway_transaction_instruction *instruction =
 		view->container->node.instruction;
+	sway_log(SWAY_DEBUG, "transaction_notify_view_ready_by_geometry:\
+			x [%f], y [%f], width [%i], height [%i]", x, y, width, height);
 	if (instruction != NULL &&
 			(int)instruction->container_state.content_x == (int)x &&
 			(int)instruction->container_state.content_y == (int)y &&
