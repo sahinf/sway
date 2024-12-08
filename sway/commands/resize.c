@@ -7,10 +7,12 @@
 #include <strings.h>
 #include <wlr/util/edges.h>
 #include "sway/commands.h"
+#include "sway/desktop/transaction.h"
 #include "sway/tree/arrange.h"
 #include "sway/tree/view.h"
 #include "sway/tree/workspace.h"
 #include "log.h"
+#include "types/wlr_xdg_shell.h"
 #include "util.h"
 
 #define AXIS_HORIZONTAL (WLR_EDGE_LEFT | WLR_EDGE_RIGHT)
@@ -413,6 +415,9 @@ static struct cmd_results *resize_set_floating(struct sway_container *con,
 	con->pending.content_height += grow_height;
 
 	arrange_container(con);
+	// DOES NOT HELP
+	/*wlr_xdg_toplevel_set_size(con->view->wlr_xdg_toplevel, con->current.width, con->current.height);*/
+	/*transaction_commit_dirty();*/
 
 	return cmd_results_new(CMD_SUCCESS, NULL);
 }
