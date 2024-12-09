@@ -143,10 +143,10 @@ static void copy_container_state(struct sway_container *container,
 	if (state->children) {
 		list_free(state->children);
 	}
-
-	sway_log(SWAY_DEBUG, "copy_container_state setting state := container->pending\n\
+	sway_log(SWAY_DEBUG, "copy_container_state setting state := container->pending for '%s'\n\
 			\t\t\t\t\t%f := %f\n\
 			\t\t\t\t\t%f := %f",
+			container->title,
 			state->content_width, container->pending.content_width,
 			state->content_height, container->pending.content_height);
 	memcpy(state, &container->pending, sizeof(struct sway_container_state));
