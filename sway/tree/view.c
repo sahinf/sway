@@ -287,11 +287,15 @@ void view_autoconfigure(struct sway_view *view) {
 	struct sway_node n = view->container->node;
 	sway_log(SWAY_DEBUG, "view_autoconfigure() on '%s' '%s' '%s'"
 			,n.sway_output->wlr_output->name, n.sway_workspace->name, view->container->title);
-	if (container_is_scratchpad_hidden(con) &&
-			con->pending.fullscreen_mode != FULLSCREEN_GLOBAL) {
-		sway_log(SWAY_DEBUG,"Container is scratchpad, returning");
-		return;
-	}
+
+	// FURKAN Try commenting this out to see whether a container in the scratchpad can get the resizing it needs
+	// Actually a scratchpad doesn't have an output so I expect it to crash. test it
+	// RESULT: It did not crash but it also did not actually resize...
+	/*if (container_is_scratchpad_hidden(con) &&*/
+	/*		con->pending.fullscreen_mode != FULLSCREEN_GLOBAL) {*/
+	/*	sway_log(SWAY_DEBUG,"Container is scratchpad, returning");*/
+	/*	return;*/
+	/*}*/
 	struct sway_output *output = ws ? ws->output : NULL;
 
 	if (con->pending.fullscreen_mode == FULLSCREEN_WORKSPACE) {
