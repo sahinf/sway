@@ -144,6 +144,11 @@ static void copy_container_state(struct sway_container *container,
 		list_free(state->children);
 	}
 
+	sway_log(SWAY_DEBUG, "copy_container_state setting state := container->pending\n\
+			\t\t\t\t\t%f := %f\n\
+			\t\t\t\t\t%f := %f",
+			state->content_width, container->pending.content_width,
+			state->content_height, container->pending.content_height);
 	memcpy(state, &container->pending, sizeof(struct sway_container_state));
 
 	if (!container->view) {
@@ -191,7 +196,8 @@ static void transaction_add_node(struct sway_transaction *transaction,
 		instruction->node = node;
 		instruction->server_request = server_request;
 		struct sway_container_state * state = &instruction->container_state;
-		if (state) sway_log(SWAY_DEBUG, "Adding transaction width=%f, height=%f", state->width, state->height);
+		if (state) sway_log(SWAY_DEBUG, "Adding instruction %i (%p) content_width=%f, content_height=%f",
+				instruction->serial, &instruction, state->content_width, state->content_height);
 		list_add(transaction->instructions, instruction);
 		node->ntxnrefs++;
 	} else if (server_request) {

@@ -415,6 +415,8 @@ static struct cmd_results *resize_set_floating(struct sway_container *con,
 	con->pending.content_height += grow_height;
 
 	arrange_container(con);
+	sway_log(SWAY_DEBUG, "resize_set_floating() pending width=%f, height=%f and con->node->dirty bit=%s", 
+			con->pending.content_width,con->pending.content_height, con->node.dirty ? "true" : "false");
 	// DOES NOT HELP
 	/*wlr_xdg_toplevel_set_size(con->view->wlr_xdg_toplevel, con->current.width, con->current.height);*/
 	/*transaction_commit_dirty();*/
