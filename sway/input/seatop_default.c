@@ -557,6 +557,7 @@ static void check_focus_follows_mouse(struct sway_seat *seat,
 		struct wlr_layer_surface_v1 *layer = NULL;
 		if ((layer = toplevel_layer_surface_from_surface(surface)) &&
 				layer->current.keyboard_interactive) {
+			sway_log(SWAY_ERROR, "seat_set_focus_layer(seat, layer);");
 			seat_set_focus_layer(seat, layer);
 			transaction_commit_dirty();
 			return;
@@ -564,6 +565,7 @@ static void check_focus_follows_mouse(struct sway_seat *seat,
 
 		struct sway_output *hovered_output = wlr_output->data;
 		if (focus && hovered_output != node_get_output(focus)) {
+			sway_log(SWAY_ERROR, "struct sway_workspace *ws = output_get_active_workspace(hovered_output);");
 			struct sway_workspace *ws = output_get_active_workspace(hovered_output);
 			seat_set_focus(seat, &ws->node);
 			transaction_commit_dirty();
@@ -574,9 +576,11 @@ static void check_focus_follows_mouse(struct sway_seat *seat,
 	// If a workspace node is hovered (eg. in the gap area), only set focus if
 	// the workspace is on a different output to the previous focus.
 	if (focus && hovered_node->type == N_WORKSPACE) {
+		sway_log(SWAY_ERROR, "struct sway_output *focused_output = node_get_output(focus);");
 		struct sway_output *focused_output = node_get_output(focus);
 		struct sway_output *hovered_output = node_get_output(hovered_node);
 		if (hovered_output != focused_output) {
+			sway_log(SWAY_ERROR, "seat_set_focus(seat, seat_get_focus_inactive(seat, hovered_node));");
 			seat_set_focus(seat, seat_get_focus_inactive(seat, hovered_node));
 			transaction_commit_dirty();
 		}
@@ -593,6 +597,7 @@ static void check_focus_follows_mouse(struct sway_seat *seat,
 		// But if focus_follows_mouse is "always", we do.
 		if (hovered_node != e->previous_node ||
 				config->focus_follows_mouse == FOLLOWS_ALWAYS) {
+			// sway_log(SWAY_ERROR, "seat_set_focus(seat, hovered_node);");
 			seat_set_focus(seat, hovered_node);
 			transaction_commit_dirty();
 		}

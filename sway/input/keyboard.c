@@ -634,18 +634,22 @@ static void handle_keyboard_group_leave(struct wl_listener *listener,
 		return;
 	}
 
+	sway_log(SWAY_ERROR, "// Refocus the focused node, layer surface, or unmanaged surface so that");
 	// Refocus the focused node, layer surface, or unmanaged surface so that
 	// it picks up the current keyboard state.
 	struct sway_seat *seat = keyboard->seat_device->sway_seat;
 	struct sway_node *focus = seat_get_focus(seat);
 	if (focus) {
+		sway_log(SWAY_ERROR, "seat_set_focus(seat, NULL);");
 		seat_set_focus(seat, NULL);
 		seat_set_focus(seat, focus);
 	} else if (seat->focused_layer) {
+		sway_log(SWAY_ERROR, "struct wlr_layer_surface_v1 *layer = seat->focused_layer;");
 		struct wlr_layer_surface_v1 *layer = seat->focused_layer;
 		seat_set_focus_layer(seat, NULL);
 		seat_set_focus_layer(seat, layer);
 	} else {
+		sway_log(SWAY_ERROR, "struct wlr_surface *unmanaged = seat->wlr_seat->keyboard_state.focused_surface;");
 		struct wlr_surface *unmanaged = seat->wlr_seat->keyboard_state.focused_surface;
 		seat_set_focus_surface(seat, NULL, false);
 		seat_set_focus_surface(seat, unmanaged, false);
@@ -919,7 +923,7 @@ static void sway_keyboard_group_add(struct sway_keyboard *keyboard) {
 			if (wlr_keyboard_keymaps_match(keyboard->keymap,
 						wlr_group->keyboard.keymap) &&
 					repeat_info_match(keyboard, &wlr_group->keyboard)) {
-				sway_log(SWAY_DEBUG, "Adding keyboard %s to group %p",
+				sway_log(SWAY_ERROR, "Adding keyboard %s to group %p",
 						device->identifier, wlr_group);
 				wlr_keyboard_group_add_keyboard(wlr_group, keyboard->wlr);
 				return;
