@@ -420,6 +420,7 @@ void view_set_activated(struct sway_view *view, bool activated) {
 		view->impl->set_activated(view, activated);
 	}
 	if (view->foreign_toplevel) {
+		sway_log(SWAY_ERROR, "view_set_activated: calling wlr_foreign_toplevel_handle_v1_set_activated");
 		wlr_foreign_toplevel_handle_v1_set_activated(
 				view->foreign_toplevel, activated);
 	}

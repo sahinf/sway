@@ -538,6 +538,7 @@ static void handle_button(struct sway_seat *seat, uint32_t time_msec,
 static void check_focus_follows_mouse(struct sway_seat *seat,
 		struct seatop_default_event *e, struct sway_node *hovered_node) {
 	struct sway_node *focus = seat_get_focus(seat);
+		// sway_log(SWAY_ERROR, "struct sway_node *focus = seat_get_focus(seat);");
 
 	// This is the case if a layer-shell surface is hovered.
 	// If it's on another output, focus the active workspace there.
@@ -591,17 +592,20 @@ static void check_focus_follows_mouse(struct sway_seat *seat,
 	// tabs, hence the view_is_visible check.
 	if (node_is_view(hovered_node) &&
 			view_is_visible(hovered_node->sway_container->view)) {
+		// sway_log(SWAY_ERROR, "node_is_view(hovered_node) && '%s' is visible", hovered_node->sway_container ? hovered_node->sway_container->title : "NULL");
+		
 		// e->previous_node is the node which the cursor was over previously.
 		// If focus_follows_mouse is yes and the cursor got over the view due
 		// to, say, a workspace switch, we don't want to set the focus.
 		// But if focus_follows_mouse is "always", we do.
 		if (hovered_node != e->previous_node ||
 				config->focus_follows_mouse == FOLLOWS_ALWAYS) {
-			// sway_log(SWAY_ERROR, "seat_set_focus(seat, hovered_node);");
+			sway_log(SWAY_ERROR, "Hoverered node != Previous node, setting focus to new %s", hovered_node->sway_container->title);
 			seat_set_focus(seat, hovered_node);
 			transaction_commit_dirty();
 		}
 	}
+// NOTE Moving mouse around in terminal reaches this inf times.
 }
 
 static void handle_pointer_motion(struct sway_seat *seat, uint32_t time_msec) {

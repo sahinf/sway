@@ -156,7 +156,10 @@ static struct sway_keyboard *sway_keyboard_for_wlr_keyboard(
 static void seat_keyboard_notify_enter(struct sway_seat *seat,
 		struct wlr_surface *surface) {
 	struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(seat->wlr_seat);
+	sway_log(SWAY_ERROR,"Got keyboard %d", keyboard->keymap_fd);
+
 	if (!keyboard) {
+		sway_log(SWAY_ERROR, "No keyboard, calling keyboard_notify_enter");
 		wlr_seat_keyboard_notify_enter(seat->wlr_seat, surface, NULL, 0, NULL);
 		return;
 	}
@@ -166,6 +169,7 @@ static void seat_keyboard_notify_enter(struct sway_seat *seat,
 	assert(sway_keyboard && "Cannot find sway_keyboard for seat keyboard");
 
 	struct sway_shortcut_state *state = &sway_keyboard->state_pressed_sent;
+	sway_log(SWAY_ERROR, "had keyboard, calling keyboard_notiyf_enter with state");
 	wlr_seat_keyboard_notify_enter(seat->wlr_seat, surface,
 			state->pressed_keycodes, state->npressed, &keyboard->modifiers);
 }
@@ -1080,9 +1084,12 @@ static void seat_send_unfocus(struct sway_node *node, struct sway_seat *seat) {
 	sway_cursor_constrain(seat->cursor, NULL);
 	wlr_seat_keyboard_notify_clear_focus(seat->wlr_seat);
 	if (node->type == N_WORKSPACE) {
+		sway_log(SWAY_ERROR, "seat_send_unfocus: workspace_for_each_container");
 		workspace_for_each_container(node->sway_workspace, send_unfocus, seat);
 	} else {
+		sway_log(SWAY_ERROR, "seat_send_unfocus: send_unfocus(node->sway_container, seat);");
 		send_unfocus(node->sway_container, seat);
+		sway_log(SWAY_ERROR, "seat_send_unfocus: container_for_each_child(node->sway_container, send_unfocus, seat);");
 		container_for_each_child(node->sway_container, send_unfocus, seat);
 	}
 }
@@ -1117,12 +1124,18 @@ void seat_set_raw_focus(struct sway_seat *seat, struct sway_node *node) {
 	wl_list_remove(&seat_node->link);
 	wl_list_insert(&seat->focus_stack, &seat_node->link);
 	node_set_dirty(node);
+	// const char * n = NULL;
+	// if (node && node->sway_container) n = node->sway_container->title;
+	// sway_log(SWAY_ERROR, "node_set_dirty(node); on %s", n);
 
 	// If focusing a scratchpad container that is fullscreen global, parent
 	// will be NULL
 	struct sway_node *parent = node_get_parent(node);
+	// const char * p = NULL;
+	// if (parent && parent->sway_container) p = parent->sway_container->title;
 	if (parent) {
 		node_set_dirty(parent);
+		// sway_log(SWAY_ERROR, "Set dirty on parent '%s'", p);
 	}
 }
 
@@ -1135,10 +1148,9 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 	struct sway_workspace *last_workspace = seat_get_focused_workspace(seat);
 
 	if (node == NULL) {
-		sway_log(SWAY_ERROR, "if (node == NULL) {");
 		// Close any popups on the old focus
 		if (node_is_view(last_focus)) {
-			sway_log(SWAY_ERROR, "if (node_is_view(last_focus)) {");
+			sway_log(SWAY_ERROR, "seat_set_workspace_focus: view_close_popups(last_focus->sway_container->view);");
 			view_close_popups(last_focus->sway_container->view);
 		}
 		seat_send_unfocus(last_focus, seat);
@@ -1154,13 +1166,11 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 
 	// Deny setting focus to a view which is hidden by a fullscreen container or global
 	if (container && container_obstructing_fullscreen_container(container)) {
-		sway_log(SWAY_ERROR, "if (container && container_obstructing_fullscreen_container(container)) {");
 		return;
 	}
 
 	// Deny setting focus to a workspace node when using fullscreen global
 	if (root->fullscreen_global && !container && new_workspace) {
-		sway_log(SWAY_ERROR, "if (root->fullscreen_global && !container && new_workspace) {");
 		return;
 	}
 
@@ -1168,7 +1178,6 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 		new_workspace ? new_workspace->output : NULL;
 
 	if (last_workspace != new_workspace && new_output) {
-		sway_log(SWAY_ERROR, "if (last_workspace != new_workspace && new_output) {");
 		node_set_dirty(&new_output->node);
 	}
 
@@ -1178,12 +1187,12 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 
 	// Unfocus the previous focus
 	if (last_focus) {
-		sway_log(SWAY_ERROR, "if (last_focus) {");
+		sway_log(SWAY_ERROR, "seat_set_workspace_focus: seat_send_unfocus");
 		seat_send_unfocus(last_focus, seat);
+		sway_log(SWAY_ERROR, "seat_set_workspace_focus: node_set_dirt");
 		node_set_dirty(last_focus);
 		struct sway_node *parent = node_get_parent(last_focus);
 		if (parent) {
-			sway_log(SWAY_ERROR, "if (parent) {");
 			node_set_dirty(parent);
 		}
 	}
@@ -1191,7 +1200,6 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 	// Put the container parents on the focus stack, then the workspace, then
 	// the focused container.
 	if (container) {
-		sway_log(SWAY_ERROR, "if (container) {");
 		struct sway_container *parent = container->pending.parent;
 		while (parent) {
 			seat_set_raw_focus(seat, &parent->node);
@@ -1199,31 +1207,28 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 		}
 	}
 	if (new_workspace) {
-		sway_log(SWAY_ERROR, "if (new_workspace) {");
 		seat_set_raw_focus(seat, &new_workspace->node);
 	}
 	if (container) {
-		sway_log(SWAY_ERROR, "if (container) {");
+		sway_log(SWAY_ERROR, "seat_set_workspace_focus->seat_set_raw_focus");
 		seat_set_raw_focus(seat, &container->node);
+		sway_log(SWAY_ERROR, "seat_set_workspace_focus->seat_send_focus");
 		seat_send_focus(&container->node, seat);
 	}
 
 	// emit ipc events
 	set_workspace(seat, new_workspace);
 	if (container && container->view) {
-		sway_log(SWAY_ERROR, "if (container && container->view) {");
 		ipc_event_window(container, "focus");
 	}
 
 	// Move sticky containers to new workspace
 	if (new_workspace && new_output_last_ws
 			&& new_workspace != new_output_last_ws) {
-			sway_log(SWAY_ERROR, "&& new_workspace != new_output_last_ws) {");
 		for (int i = 0; i < new_output_last_ws->floating->length; ++i) {
 			struct sway_container *floater =
 				new_output_last_ws->floating->items[i];
 			if (container_is_sticky(floater)) {
-				sway_log(SWAY_ERROR, "if (container_is_sticky(floater)) {");
 				container_detach(floater);
 				workspace_add_floating(new_workspace, floater);
 				--i;
@@ -1233,45 +1238,39 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 
 	// Close any popups on the old focus
 	if (last_focus && node_is_view(last_focus)) {
-		sway_log(SWAY_ERROR, "if (last_focus && node_is_view(last_focus)) {");
 		view_close_popups(last_focus->sway_container->view);
 	}
 
 	// If urgent, either unset the urgency or start a timer to unset it
 	if (container && container->view && view_is_urgent(container->view) &&
 			!container->view->urgent_timer) {
-		sway_log(SWAY_ERROR, "if (container && container->view && view_is_urgent(container->view) &&");
 		struct sway_view *view = container->view;
 		if (last_workspace && last_workspace != new_workspace &&
 				config->urgent_timeout > 0) {
-			sway_log(SWAY_ERROR, "if (last_workspace && last_workspace != new_workspace &&");
 			view->urgent_timer = wl_event_loop_add_timer(server.wl_event_loop,
 					handle_urgent_timeout, view);
 			if (view->urgent_timer) {
-				sway_log(SWAY_ERROR, "if (view->urgent_timer) {");
 				wl_event_source_timer_update(view->urgent_timer,
 						config->urgent_timeout);
 			} else {
-				sway_log(SWAY_ERROR, "} else {");
 				sway_log_errno(SWAY_ERROR, "Unable to create urgency timer");
 				handle_urgent_timeout(view);
 			}
 		} else {
-			sway_log(SWAY_ERROR, "} else {");
 			view_set_urgent(view, false);
 		}
 	}
 
 	if (new_output_last_ws) {
-		sway_log(SWAY_ERROR, "if (new_output_last_ws) {");
 		workspace_consider_destroy(new_output_last_ws);
 	}
 	if (last_workspace && last_workspace != new_output_last_ws) {
-		sway_log(SWAY_ERROR, "if (last_workspace && last_workspace != new_output_last_ws) {");
 		workspace_consider_destroy(last_workspace);
 	}
 
 	seat->has_focus = true;
+	// sway_log(SWAY_INFO, "%s seat has focus = true", seat->workspace->node.sway_container ? seat->workspace->node.sway_container->title : "Null");
+	sway_log(SWAY_INFO, "seat has focus = true");
 
 	if (config->smart_gaps && new_workspace) {
 		sway_log(SWAY_ERROR, "if (config->smart_gaps && new_workspace) {");
@@ -1283,19 +1282,20 @@ static void seat_set_workspace_focus(struct sway_seat *seat, struct sway_node *n
 
 void seat_set_focus(struct sway_seat *seat, struct sway_node *node) {
 	// Prevents the layer from losing focus if it has keyboard exclusivity
+	sway_log(SWAY_ERROR, "REEE // Prevents the layer from losing focus if it has keyboard exclusivity");
 	if (seat->has_exclusive_layer) {
-		sway_log(SWAY_ERROR, "struct wlr_layer_surface_v1 *layer = seat->focused_layer;");
+		sway_log(SWAY_ERROR, "seat_set_focus: seat has exclusive layer");
 		struct wlr_layer_surface_v1 *layer = seat->focused_layer;
 		seat_set_focus_layer(seat, NULL);
 		seat_set_workspace_focus(seat, node);
 		seat_set_focus_layer(seat, layer);
 	} else if (seat->focused_layer) {
-		sway_log(SWAY_ERROR, "seat_set_focus_layer(seat, NULL);");
+		sway_log(SWAY_ERROR, "seat_set_focus: seat has focused layer");
 		seat_set_focus_layer(seat, NULL);
 		seat_set_workspace_focus(seat, node);
 	} else {
 		// TODO FURKAN both leaving terminal and leaving qutebrowser after context menu hit this.
-		// sway_log(SWAY_ERROR, "seat_set_workspace_focus(seat, node);");
+		sway_log(SWAY_ERROR, "seat_set_focus: not have either layers");
 		seat_set_workspace_focus(seat, node);
 	}
 	if (server.session_lock.lock) {
@@ -1322,8 +1322,10 @@ void seat_set_focus_surface(struct sway_seat *seat,
 	}
 
 	if (surface) {
+		sway_log(SWAY_ERROR, "seat_set_focus_surface calling seat_keyboard_notify_enter");
 		seat_keyboard_notify_enter(seat, surface);
 	} else {
+		sway_log(SWAY_ERROR, "seat_set_focus_surface calling wlr_seat_keyboard_notify_clear_focus");
 		wlr_seat_keyboard_notify_clear_focus(seat->wlr_seat);
 	}
 
