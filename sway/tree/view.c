@@ -1254,6 +1254,8 @@ static void view_save_buffer_iterator(struct wlr_scene_buffer *buffer,
 		buffer->has_primaries ? &buffer->primaries : NULL);
 	wlr_scene_buffer_set_luminances(sbuf,
 		buffer->has_luminances ? &buffer->luminances : NULL);
+	wlr_scene_buffer_set_content_light_levels(sbuf,
+		buffer->max_cll, buffer->max_fall);
 	wlr_scene_buffer_set_source_box(sbuf, &buffer->src_box);
 	wlr_scene_node_set_position(&sbuf->node, sx, sy);
 	wlr_scene_buffer_set_transform(sbuf, buffer->transform);
